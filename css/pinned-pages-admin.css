@@ -1,0 +1,28 @@
+/**
+ * @package PinnedPages
+ * @copyright BC Libraries Coop 2013
+ *
+ **/
+#coop-pp-infobox {
+	display: block;
+}
+ 
+option.pinned {
+	font-weight: bold;
+}
+
+.level-1 {
+	padding-left: 1em;
+}
+
+.level-2 {
+	padding-left: 2em;
+}
+
+.level-3 {
+	padding-left: 3em;
+}
+
+.level-4 {
+	padding-left: 4em;
+}
