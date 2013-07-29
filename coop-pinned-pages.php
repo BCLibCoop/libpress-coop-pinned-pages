@@ -31,8 +31,8 @@ class CoopPinnedPages {
 		
 			add_action( 'admin_enqueue_scripts', array( &$this, 'admin_enqueue_styles_scripts' ));
 			
-			add_action( 'add_meta_boxes', array(&$this, 'add_pinned_page_meta_box'));
-			add_action( 'add_meta_boxes', array(&$this, 'modify_post_editor'));
+			add_action( 'add_meta_boxes_page', array(&$this, 'add_pinned_page_meta_box'));
+			add_action( 'add_meta_boxes_page', array(&$this, 'modify_post_editor'));
 			
 			add_action( 'quick_edit_custom_box', array(&$this,'display_pinned_page_quickedit'), 10, 2 );
 			add_action( 'save_post', array( &$this, 'save_post_pinned_page_metadata' ));
@@ -67,7 +67,6 @@ class CoopPinnedPages {
 	    }		
 	}
 	
-	
 	public function coop_usermeta_script() {
 		$role = self::current_role();
 		echo '<script id="coop-usermeta" type="text/javascript">window.user_role = "'. $role .'";</script>';
@@ -80,22 +79,39 @@ class CoopPinnedPages {
 	}
 	
 		
-	public function add_pinned_page_meta_box() {
+	public function add_pinned_page_meta_box( $post ) {
 		
-		add_meta_box( 'coop-pp-metabox','Pin Page',array(&$this,'pinned_page_inner_custom_box'),'page' );
-		
-		if( ! current_user_can('manage_local_site')) {	
-		
-			add_meta_box( 'coop-pp-infobox','Pinned Page',array(&$this,'pinned_page_inner_infobox'),'page' );
+		// Super Admin can modify the pinned-state of a page
+		if( current_user_can( 'manage_network' )) {
+			add_meta_box( 'coop-pp-metabox','Pin Page',array(&$this,'pinned_page_inner_custom_box'),'page' );
+		}
+		// other users cannot modify, but get informed on pinned-ness
+		else {
+			$m = get_post_meta($post->ID,$this->slug,true);
+			if( !empty($m)) {
+				// is pinned
+				add_meta_box( 'coop-pp-infobox','Pinned Page',array(&$this,'pinned_page_inner_infobox'),'page' );
+			}
 		}
 	}
 	
+	
 	public function pinned_page_inner_infobox( $post ) {
-			
+		/**
+		*	This information box applies for non-Super Admin users
+		*	to tell them when a page is locked (pinned).
+		**/
+		/**
+		*	Do we have a pinned flag set on the current page ?
+		**/	
+		
 		printf('<label for="%s">%s</label> ',$this->slug,'This page is locked in position');
-		
-		printf('<p>%s</p>', "This page is a required part of the website architecture. It must remain in it's current position in the menu, and must keep the given page title. You may edit the content of the page as you wish. ");
-		
+		printf('<p>%s</p>', "This page is a required part of the website architecture. ");		
+		// Site Manager may change the content, but not title or parent
+		if( current_user_can('manage_local_site')) {				
+			echo "<p>You may edit the content of the page as you wish. ";
+			echo "You cannot change the title or change the parent page of a pinned page.</p>";
+		}
 	}
 	
 	public function pinned_page_inner_custom_box( $post ) {
@@ -118,7 +134,7 @@ class CoopPinnedPages {
 	
 		$columns = array_merge( $columns, $my_custom_cols );
 		
-		/** How to remove a Author, Comments columns **/
+		/** How to remove a Comments column **/
 			unset(
 		//		$columns['author'],
 				$columns['comments']
@@ -190,7 +206,8 @@ class CoopPinnedPages {
 	
 	public function save_post_pinned_page_metadata( $post_id ) {
 		
-		if ( !current_user_can( 'manage_local_site' ) ) {
+		//  only Super Admins can save changes to the pinned state 
+		if ( !current_user_can( 'manage_network' ) ) {
 	        return;
 	    }
 		
@@ -204,11 +221,7 @@ class CoopPinnedPages {
 		}
 	}
 	
-	
-	
-	
-	
-	
+		
 	public function modify_post_editor() {
 			
 		// despite it's name this function modifies the pages editor
@@ -261,7 +274,7 @@ class CoopPinnedPages {
 	public function expand_options( $node ) {
 		
 		/**
-		*	when this node (option) has the same value (post_ID) as the current $post object's _parent_ node,
+		*	when the current node (option) has the same value (post_ID) as the current $post object's _parent_ node,
 		*	set this option as the selected option in the select control.
 		**/
 		
@@ -280,16 +293,16 @@ class CoopPinnedPages {
 		return implode("\n",$out);
 	}
 	
+	
 	/**
-	*	walk the menu hierarchy from the fixutres at the base 
+	*	walk the menu hierarchy from the pinned pages at the base 
 	*	to the last pages under each branch.
-	*
 	**/
 
 	public function walk_menu_nodes( $node_id=0, $depth=0 ) {
 			
 		global $wpdb;
-		$sql = "SELECT ID, post_type, post_title, post_parent, menu_order FROM $wpdb->posts WHERE post_parent=$node_id AND post_type IN('page','fixture') AND post_status='publish' ORDER BY post_parent, menu_order";
+		$sql = "SELECT ID, post_type, post_title, post_parent, menu_order FROM $wpdb->posts WHERE post_parent=$node_id AND post_type IN('page') AND post_status='publish' ORDER BY post_parent, menu_order";
 
 		$res = $wpdb->get_results($sql);
 				
