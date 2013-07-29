@@ -7,9 +7,10 @@
  **/
 /**
  * Plugin Name: Coop Pinned Pages
- * Description: Mark existing pages as "pinned" - prohibits some behaviours, locks item into the menu.  NETWORK ACTIVATE.
+ * Description: Mark existing pages as "pinned" - prohibits some behaviours, locks item into the menu. Install as MUST USE.
  * Author: Erik Stainsby, Roaring Sky Software
- * Version: 0.1.7
+ * Author URI: http://wp.roaringsky.ca/plugins/coop-pinned-pages
+ * Version: 0.1.8
  **/
 
 
@@ -30,8 +31,8 @@ class CoopPinnedPages {
 		
 			add_action( 'admin_enqueue_scripts', array( &$this, 'admin_enqueue_styles_scripts' ));
 			
-			add_action( 'add_meta_boxes', array(&$this, 'add_pinned_page_meta_box'));
-			add_action( 'add_meta_boxes', array(&$this, 'modify_post_editor'));
+			add_action( 'add_meta_boxes_page', array(&$this, 'add_pinned_page_meta_box'));
+			add_action( 'add_meta_boxes_page', array(&$this, 'modify_post_editor'));
 			
 			add_action( 'quick_edit_custom_box', array(&$this,'display_pinned_page_quickedit'), 10, 2 );
 			add_action( 'save_post', array( &$this, 'save_post_pinned_page_metadata' ));
@@ -39,48 +40,36 @@ class CoopPinnedPages {
 			add_filter( 'manage_pages_columns', array(&$this,'add_pinned_column_definition'),10, 1 );
 			add_action( 'manage_pages_custom_column', array(&$this,'add_pinned_column_data'), 10, 2 );
 			
+			// support for quick_edit behaviour
 			add_action( 'admin_footer-edit.php', array(&$this,'admin_load_footer_script'),11);
+			add_action( 'admin_footer-post.php', array(&$this,'admin_load_footer_script'),11);
 			
 		//	add_action( 'wp_ajax_coop-save-pp-change', array( &$this, 'pp_admin_save_changes'));
 		}
 	}
-	
-	/*
-public function activation_routine() {
-	
-		global $wpdb;
-		$sql = "SELECT * FROM $wpdb->posts WHERE post_type='fixture'";
-		$res = $wpdb->get_results($sql);
-	//	error_log( count($res) );
-		foreach( $res as $r ) {
-			add_post_meta($r->ID,'pinned-page', 1 );
-		}
-		$wpdb->query("UPDATE $wpdb->posts SET post_type='page' WHERE post_type='fixture'");
-		
-	}
-*/
 	
 		
 	public function admin_enqueue_styles_scripts($hook) {
 	
 		self::coop_usermeta_script();
 	
+		wp_register_script( 'coop-pp-admin-footer', plugins_url('js/pinned-pages-admin-foot.js', __FILE__),array('jquery'));
 		wp_register_script( 'coop-pp-admin-js', plugins_url( '/js/pinned-pages-admin.js',__FILE__), array('jquery'));
 		wp_register_style( 'coop-pp-admin', plugins_url( '/css/pinned-pages-admin.css', __FILE__ ), false );
 		
 		wp_enqueue_style( 'coop-pp-admin' );
 		wp_enqueue_script( 'coop-pp-admin-js' );
-		
+		wp_enqueue_script( 'coop-pp-admin-footer' );
 	}
 	
 	public function admin_load_footer_script($hook) {
 	
-		if ((isset($_GET['page']) && $_GET['page'] == 'page') || (isset($_GET['post_type']) && $_GET['post_type'] == 'page'))
-	    {
-	        echo '<script type="text/javascript" src="', plugins_url('js/pinned-pages-admin-foot.js', __FILE__), '"></script>';
-	    }		
+		error_log( __FUNCTION__ );
+		
+		echo '<script id="coop-pinned-footer" type="text/javascript">';
+		echo '    jQuery().ready(function() { window.coop_pinned_page_lockup = jQuery().cooppplockup()}); ';
+		echo '</script>';		 
 	}
-	
 	
 	public function coop_usermeta_script() {
 		$role = self::current_role();
@@ -94,21 +83,44 @@ public function activation_routine() {
 	}
 	
 		
-	public function add_pinned_page_meta_box() {
+	public function add_pinned_page_meta_box( $post ) {
 		
-		add_meta_box( 'coop-pp-metabox','Pin Page',array(&$this,'pinned_page_inner_custom_box'),'page' );
-		
-		if( ! current_user_can('manage_network')) {	
-			add_meta_box( 'coop-pp-infobox','Pinned Page',array(&$this,'pinned_page_inner_infobox'),'page' );
+		// Super Admin can modify the pinned-state of a page
+		if( current_user_can( 'manage_network' )) {
+			add_meta_box( 'coop-pp-metabox','Pin Page',array(&$this,'pinned_page_inner_custom_box'),'page' );
+		}
+		// other users cannot modify, but get informed on pinned-ness
+		else {
+			$m = get_post_meta($post->ID,$this->slug,true);
+			if( !empty($m)) {
+				// is pinned
+				add_meta_box( 'coop-pp-infobox','Pinned Page',array(&$this,'pinned_page_inner_infobox'),'page' );
+			}
 		}
 	}
 	
+	
 	public function pinned_page_inner_infobox( $post ) {
-			
+		/**
+		*	This information box applies for non-Super Admin users
+		*	to tell them when a page is locked (pinned).
+		**/
+		/**
+		*	Do we have a pinned flag set on the current page ?
+		**/	
+		
 		printf('<label for="%s">%s</label> ',$this->slug,'This page is locked in position');
+		printf('<p>%s</p>', "This page is a required part of the website architecture. ");
 		
-		printf('<p>%s</p>', "This page is a required part of the website architecture. It must remain in it's current position in the menu, and must keep the given page title. You may edit the content of the page as you wish. ");
+		$value = get_post_meta( $post->ID, $this->slug, true );
+		// add a hidden input with the checked attribute set or not, indicating if the current post is pinned or not
+		printf( '<input type="hidden" id="%s-checkbox" name="%s" value="%s">',$this->slug,$this->slug,(($value>0)?'checked':''));
 		
+		// Site Manager may change the content, but not title or parent
+		if( current_user_can('manage_local_site')) {				
+			echo "<p>You may edit the content of the page as you wish. ";
+			echo "You cannot change the title or change the parent page of a pinned page.</p>";
+		}
 	}
 	
 	public function pinned_page_inner_custom_box( $post ) {
@@ -131,7 +143,7 @@ public function activation_routine() {
 	
 		$columns = array_merge( $columns, $my_custom_cols );
 		
-		/** How to remove a Author, Comments columns **/
+		/** How to remove a Comments column **/
 			unset(
 		//		$columns['author'],
 				$columns['comments']
@@ -182,7 +194,7 @@ public function activation_routine() {
 		if ( 'page' !== $_POST['post_type'] ) {
 			return;
 		} 
-		if ( 'page' == $_POST['post_type'] && ! current_user_can( 'manage_plugins', $post_id ) ) {
+		if ( 'page' == $_POST['post_type'] && ! current_user_can( 'manage_local_site', $post_id ) ) {
 		    return;
 		}
 		if ( ! isset( $_POST[$this->slug.'-nonce'] ) 
@@ -203,7 +215,8 @@ public function activation_routine() {
 	
 	public function save_post_pinned_page_metadata( $post_id ) {
 		
-		if ( !current_user_can( 'manage_plugins' ) ) {
+		//  only Super Admins can save changes to the pinned state 
+		if ( !current_user_can( 'manage_network' ) ) {
 	        return;
 	    }
 		
@@ -217,11 +230,7 @@ public function activation_routine() {
 		}
 	}
 	
-	
-	
-	
-	
-	
+		
 	public function modify_post_editor() {
 			
 		// despite it's name this function modifies the pages editor
@@ -274,7 +283,7 @@ public function activation_routine() {
 	public function expand_options( $node ) {
 		
 		/**
-		*	when this node (option) has the same value (post_ID) as the current $post object's _parent_ node,
+		*	when the current node (option) has the same value (post_ID) as the current $post object's _parent_ node,
 		*	set this option as the selected option in the select control.
 		**/
 		
@@ -293,16 +302,16 @@ public function activation_routine() {
 		return implode("\n",$out);
 	}
 	
+	
 	/**
-	*	walk the menu hierarchy from the fixutres at the base 
+	*	walk the menu hierarchy from the pinned pages at the base 
 	*	to the last pages under each branch.
-	*
 	**/
 
 	public function walk_menu_nodes( $node_id=0, $depth=0 ) {
 			
 		global $wpdb;
-		$sql = "SELECT ID, post_type, post_title, post_parent, menu_order FROM $wpdb->posts WHERE post_parent=$node_id AND post_type IN('page','fixture') AND post_status='publish' ORDER BY post_parent, menu_order";
+		$sql = "SELECT ID, post_type, post_title, post_parent, menu_order FROM $wpdb->posts WHERE post_parent=$node_id AND post_type IN('page') AND post_status='publish' ORDER BY post_parent, menu_order";
 
 		$res = $wpdb->get_results($sql);
 				
