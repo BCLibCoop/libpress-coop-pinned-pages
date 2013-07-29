@@ -7,9 +7,10 @@
  **/
 /**
  * Plugin Name: Coop Pinned Pages
- * Description: Mark existing pages as "pinned" - prohibits some behaviours, locks item into the menu.  NETWORK ACTIVATE.
+ * Description: Mark existing pages as "pinned" - prohibits some behaviours, locks item into the menu. Install as MUST USE.
  * Author: Erik Stainsby, Roaring Sky Software
- * Version: 0.1.7
+ * Author URI: http://wp.roaringsky.ca/plugins/coop-pinned-pages
+ * Version: 0.1.8
  **/
 
 
@@ -44,21 +45,6 @@ class CoopPinnedPages {
 		//	add_action( 'wp_ajax_coop-save-pp-change', array( &$this, 'pp_admin_save_changes'));
 		}
 	}
-	
-	/*
-public function activation_routine() {
-	
-		global $wpdb;
-		$sql = "SELECT * FROM $wpdb->posts WHERE post_type='fixture'";
-		$res = $wpdb->get_results($sql);
-	//	error_log( count($res) );
-		foreach( $res as $r ) {
-			add_post_meta($r->ID,'pinned-page', 1 );
-		}
-		$wpdb->query("UPDATE $wpdb->posts SET post_type='page' WHERE post_type='fixture'");
-		
-	}
-*/
 	
 		
 	public function admin_enqueue_styles_scripts($hook) {
@@ -98,7 +84,8 @@ public function activation_routine() {
 		
 		add_meta_box( 'coop-pp-metabox','Pin Page',array(&$this,'pinned_page_inner_custom_box'),'page' );
 		
-		if( ! current_user_can('manage_network')) {	
+		if( ! current_user_can('manage_local_site')) {	
+		
 			add_meta_box( 'coop-pp-infobox','Pinned Page',array(&$this,'pinned_page_inner_infobox'),'page' );
 		}
 	}
@@ -182,7 +169,7 @@ public function activation_routine() {
 		if ( 'page' !== $_POST['post_type'] ) {
 			return;
 		} 
-		if ( 'page' == $_POST['post_type'] && ! current_user_can( 'manage_plugins', $post_id ) ) {
+		if ( 'page' == $_POST['post_type'] && ! current_user_can( 'manage_local_site', $post_id ) ) {
 		    return;
 		}
 		if ( ! isset( $_POST[$this->slug.'-nonce'] ) 
@@ -203,7 +190,7 @@ public function activation_routine() {
 	
 	public function save_post_pinned_page_metadata( $post_id ) {
 		
-		if ( !current_user_can( 'manage_plugins' ) ) {
+		if ( !current_user_can( 'manage_local_site' ) ) {
 	        return;
 	    }
 		
