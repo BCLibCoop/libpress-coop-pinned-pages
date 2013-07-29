@@ -15,7 +15,7 @@
 
 		lockdown_editor: function() {	
 			
-			if( typenow == 'page' && adminpage == 'post-php' && $('#pinned_page-checkbox').attr("checked") == "checked" ) 
+			if( typenow == 'page' && adminpage == 'post-php' && ( $('#pinned_page-checkbox').is(":checked") || $('#pinned_page-checkbox').val() == "checked")) 
 			{
 				/*	prevent non-administrator from changing the title of a pinnned item */
 				$('#title').attr('disabled','disabled');

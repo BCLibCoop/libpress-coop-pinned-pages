@@ -40,7 +40,9 @@ class CoopPinnedPages {
 			add_filter( 'manage_pages_columns', array(&$this,'add_pinned_column_definition'),10, 1 );
 			add_action( 'manage_pages_custom_column', array(&$this,'add_pinned_column_data'), 10, 2 );
 			
+			// support for quick_edit behaviour
 			add_action( 'admin_footer-edit.php', array(&$this,'admin_load_footer_script'),11);
+			add_action( 'admin_footer-post.php', array(&$this,'admin_load_footer_script'),11);
 			
 		//	add_action( 'wp_ajax_coop-save-pp-change', array( &$this, 'pp_admin_save_changes'));
 		}
@@ -51,20 +53,22 @@ class CoopPinnedPages {
 	
 		self::coop_usermeta_script();
 	
+		wp_register_script( 'coop-pp-admin-footer', plugins_url('js/pinned-pages-admin-foot.js', __FILE__),array('jquery'));
 		wp_register_script( 'coop-pp-admin-js', plugins_url( '/js/pinned-pages-admin.js',__FILE__), array('jquery'));
 		wp_register_style( 'coop-pp-admin', plugins_url( '/css/pinned-pages-admin.css', __FILE__ ), false );
 		
 		wp_enqueue_style( 'coop-pp-admin' );
 		wp_enqueue_script( 'coop-pp-admin-js' );
-		
+		wp_enqueue_script( 'coop-pp-admin-footer' );
 	}
 	
 	public function admin_load_footer_script($hook) {
 	
-		if ((isset($_GET['page']) && $_GET['page'] == 'page') || (isset($_GET['post_type']) && $_GET['post_type'] == 'page'))
-	    {
-	        echo '<script type="text/javascript" src="', plugins_url('js/pinned-pages-admin-foot.js', __FILE__), '"></script>';
-	    }		
+		error_log( __FUNCTION__ );
+		
+		echo '<script id="coop-pinned-footer" type="text/javascript">';
+		echo '    jQuery().ready(function() { window.coop_pinned_page_lockup = jQuery().cooppplockup()}); ';
+		echo '</script>';		 
 	}
 	
 	public function coop_usermeta_script() {
@@ -106,7 +110,12 @@ class CoopPinnedPages {
 		**/	
 		
 		printf('<label for="%s">%s</label> ',$this->slug,'This page is locked in position');
-		printf('<p>%s</p>', "This page is a required part of the website architecture. ");		
+		printf('<p>%s</p>', "This page is a required part of the website architecture. ");
+		
+		$value = get_post_meta( $post->ID, $this->slug, true );
+		// add a hidden input with the checked attribute set or not, indicating if the current post is pinned or not
+		printf( '<input type="hidden" id="%s-checkbox" name="%s" value="%s">',$this->slug,$this->slug,(($value>0)?'checked':''));
+		
 		// Site Manager may change the content, but not title or parent
 		if( current_user_can('manage_local_site')) {				
 			echo "<p>You may edit the content of the page as you wish. ";
