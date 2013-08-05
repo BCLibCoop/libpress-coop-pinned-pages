@@ -66,8 +66,13 @@ class PinnedParents {
 		$out[] = '</select>';
 		$out[] = '<p><strong>Template</strong></p>';
 		$out[] = '<label for="page_template" class="screen-reader-text">Page Template</label><select id="page_template" name="page_template">';
-		$out[] = '<option value="default">Default Template</option>';
-		$out[] = '	<option value="onecolumn-page.php">One column, no sidebar</option></select>';
+		
+		$templates = wp_get_theme()->get_page_templates();
+	    foreach ( $templates as $template_name => $template_filename ) {
+	        echo '<option value="'.$template_filename.'">'.$template_name.'</option>';
+	    }
+	    
+		$out[] = '</select>';
 		$out[] = '<p><strong>Order</strong></p>';
 		$out[] = '<p><label for="menu_order" class="screen-reader-text">Order</label><input type="text" value="" id="menu_order" size="4" name="menu_order"></p>';
 		$out[] = '<p>Need help? Use the Help tab in the upper right of your screen.</p>';

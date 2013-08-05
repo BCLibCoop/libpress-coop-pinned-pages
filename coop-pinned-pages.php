@@ -265,9 +265,15 @@ class CoopPinnedPages {
 	
 		$out[] = '</select>';
 		$out[] = '<p><strong>Template</strong></p>';
-		$out[] = '<label for="page_template" class="screen-reader-text">Page Template</label><select id="page_template" name="page_template">';
-		$out[] = '<option value="default">Default Template</option>';
-		$out[] = '	<option value="onecolumn-page.php">One column, no sidebar</option></select>';
+		$out[] = '<label for="page_template" class="screen-reader-text">Page Template</label>';
+		$out[] = '<select id="page_template" name="page_template">';
+		
+		$templates = wp_get_theme()->get_page_templates();
+	    foreach ( $templates as $template_filename => $template_name ) {
+	        $out[] = '<option value="'.$template_filename.'">'.$template_name.'</option>';
+	    }
+		
+		$out[] = '</select>';
 		$out[] = '<p><strong>Order</strong></p>';
 		$out[] = '<p><label for="menu_order" class="screen-reader-text">Order</label>';
 		
