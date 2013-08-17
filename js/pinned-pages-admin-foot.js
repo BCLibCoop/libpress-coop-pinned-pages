@@ -17,7 +17,9 @@
 	 	
 	 	init: function() {
  
-		 	$('input[name="comment_status"]').parent().parent().remove();
+		 	if( typenow == 'page' ) {
+			 	$('input[name="comment_status"]').parent().parent().remove();
+			}
 		 	$('input[name="post_password"]').parent().parent().parent().remove();
 		 
 		 	self.wp_inline_edit = window.inlineEditPost.edit;
@@ -53,7 +55,7 @@
 				// populate the data
 				$('.quickedit_pinned_page', edit_row ).attr('checked', checked );
 				
-				console.log( window.user_role +' && ' + pinned );
+			//	console.log( window.user_role +' && ' + pinned );
 				
 				if ( window.user_role !== 'administrator' && pinned == 1 ) {
 					$('.ptitle').attr('disabled','disabled');

@@ -10,7 +10,7 @@
  * Description: Mark existing pages as "pinned" - prohibits some behaviours, locks item into the menu. Install as MUST USE.
  * Author: Erik Stainsby, Roaring Sky Software
  * Author URI: http://wp.roaringsky.ca/plugins/coop-pinned-pages
- * Version: 0.1.8
+ * Version: 0.2.0
  **/
 
 
