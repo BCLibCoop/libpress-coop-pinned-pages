@@ -31,7 +31,7 @@
 		inlineEditPostEdit: function( id ) {
 		
 			// we don't want to leave WordPress hanging
-			window.wp_inline_edit.apply( this, arguments );
+			self.wp_inline_edit.apply( this, arguments );
 	
 			// now we take care of our business
 			// get the post ID
