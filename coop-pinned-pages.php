@@ -191,6 +191,9 @@ class CoopPinnedPages {
 	
 	public function save_metabox_postdata( $post_id ) {
 	
+		if( ! array_key_exists('post_type',$_POST)) {
+			return;
+		}
 		if ( 'page' !== $_POST['post_type'] ) {
 			return;
 		} 
