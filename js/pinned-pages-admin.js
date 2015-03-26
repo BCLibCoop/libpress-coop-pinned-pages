@@ -65,14 +65,16 @@
 		**/
 		
 		monitor_pinned_parent: function() {
-			
-			var type = $('#pageparentdiv H3.hndle SPAN').text();
-			if( type == 'Page Parent' ) {
-				var sel = $('#parent_id option').filter(':selected');
-				if( ! $(sel).hasClass('pinned') ) {
-					alert( "A pinned page cannot be the child of a regular page.\nPlease select another pinned page (in bold) from the list.");
-					return false;
-				}
+			if( typenow == 'page'  && ( $('#pinned_page-checkbox').is(":checked") || $('#pinned_page-checkbox').val() == "checked"))  /* && adminpage == 'post-php' */{
+				var type = $('#pageparentdiv H3.hndle SPAN').text();
+      	if( type == 'Page Parent' ) {
+					var nonpins = $('#parent_id option'), i;
+        		for (var i = 0; i < nonpins.length; i++) {
+            	if( ! $(nonpins[i]).hasClass('pinned') ) {
+            		$(nonpins[i]).hide();
+            	}
+          	}
+       	}
 			}
 		}
 	};

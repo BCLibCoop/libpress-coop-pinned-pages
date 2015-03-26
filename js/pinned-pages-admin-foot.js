@@ -20,7 +20,7 @@
 		 	if( typenow == 'page' ) {
 			 	$('input[name="comment_status"]').parent().parent().remove();
 			}
-		 	$('input[name="post_password"]').parent().parent().parent().remove();
+		 	//$('input[name="post_password"]').parent().parent().parent().remove();
 		 
 		 	self.wp_inline_edit = window.inlineEditPost.edit;
 		 	
