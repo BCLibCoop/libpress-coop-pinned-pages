@@ -63,20 +63,24 @@
 		*	Observe clicks in the custom select element, to prevent mismatched selections.
 		*	A pinned page may only have another pinned page as a parent, or may have no parent at all.
 		**/
-		
 		monitor_pinned_parent: function() {
-			if( typenow == 'page'  && ( $('#pinned_page-checkbox').is(":checked") || $('#pinned_page-checkbox').val() == "checked"))  /* && adminpage == 'post-php' */{
 				var type = $('#pageparentdiv H3.hndle SPAN').text();
-      	if( type == 'Page Parent' ) {
+				if( type == 'Page Parent' ) {
 					var nonpins = $('#parent_id option'), i;
-        		for (var i = 0; i < nonpins.length; i++) {
-            	if( ! $(nonpins[i]).hasClass('pinned') ) {
-            		$(nonpins[i]).hide();
-            	}
-          	}
-       	}
-			}
-		}
+						for (var i = 0; i < nonpins.length; i++) {
+							if( $('#pinned_page-checkbox').is(":checked") || $('#pinned_page-checkbox').val() == "checked") { //if pinned option is checked
+								if( ! $(nonpins[i]).hasClass('pinned') ) {
+									$(nonpins[i]).hide(); //hide pinned options 
+								}
+							}
+							if (! $('#pinned_page-checkbox').is(":checked") || (! $('#pinned_page-checkbox').val() == "checked")) { //if pinned option unchecked
+								if(! $(nonpins[i]).hasClass('pinned') ) {
+									$(nonpins[i]).show(); //unhide pinned options
+							}
+						}
+					}
+				}
+		} //end monitor_pinned_parent
 	};
 	
 	$.fn.utils = function(){
